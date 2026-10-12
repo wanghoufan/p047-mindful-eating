@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "慢食刻",
+    "slug": "bitetempo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "bitetempo",
+    "userInterfaceStyle": "automatic",
+    "androidStatusBar": {
+      "barStyle": "light-content",
+      "backgroundColor": "#0b1014"
+    },
+    "android": {
+      "package": "com.wanghoufan.bitetempo",
+      "permissions": ["android.permission.RECORD_AUDIO"],
+      "adaptiveIcon": {
+        "backgroundColor": "#0b1014",
+        "foregroundImage": "./assets/images/android-icon-foreground.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "expo-secure-store",
+      "expo-localization",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0b1014",
+          "image": "./assets/images/splash.png",
+          "imageWidth": 220,
+          "resizeMode": "contain"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
