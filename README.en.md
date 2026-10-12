@@ -51,7 +51,9 @@ npx expo start          # dev server (QR code or emulator)
 npx expo run:android    # build/install a Development Build on a device or emulator
 ```
 
-The standalone installable package (Release) is at:
+Download the published build: open [Releases · v1.0.0](https://github.com/wanghoufan/p047-mindful-eating/releases/tag/v1.0.0) and grab `BiteTempo-1.0.0-universal.apk` (universal, Android 7.0+; the page carries the SHA-256 and install notes; the repo is private, so downloading requires signing in to your GitHub account).
+
+The locally built artifact is at:
 
 ```
 android/app/build/outputs/apk/release/app-release.apk
@@ -77,4 +79,4 @@ Expo SDK 57 / React Native 0.86 / TypeScript, with `expo-router` for the two tab
 
 ## Status
 
-v1.0.0, Android first, **finishing development** (not released, not listed). A personal learning project — issues welcome.
+v1.0.0, Android first, **finishing development**: the installable build is published on GitHub Releases (`v1.0.0`); not listed in any app store, no web version. A personal learning project.

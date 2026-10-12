@@ -51,7 +51,9 @@ npx expo start          # 开发调试（扫码或模拟器）
 npx expo run:android    # 生成/安装 Development Build 到真机或模拟器
 ```
 
-已构建好的可独立安装包（Release）：
+已发布安装包：打开 [Releases · v1.0.0](https://github.com/wanghoufan/p047-mindful-eating/releases/tag/v1.0.0)，下载 `BiteTempo-1.0.0-universal.apk`（Android 7.0+ 通用包，页面内有 SHA-256 与安装说明；仓库为私有，下载需登录你的 GitHub 账号）。
+
+本地构建产物在：
 
 ```
 android/app/build/outputs/apk/release/app-release.apk
@@ -77,4 +79,4 @@ Expo SDK 57 / React Native 0.86 / TypeScript，`expo-router` 管两页与设置�
 
 ## 状态
 
-v1.0.0，安卓首发，**开发收尾阶段**（未发布、未上架）。个人学习项目，欢迎提 issue。
+v1.0.0，安卓首发，**开发收尾阶段**：安装包已在 GitHub Release（`v1.0.0`）提供，未上架应用市场、无网页版。个人学习项目。
