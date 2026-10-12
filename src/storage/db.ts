@@ -87,6 +87,30 @@ export async function listSessions(): Promise<MealSession[]> {
   return db.getAllAsync<MealSession>('SELECT * FROM meal_session ORDER BY createdAt DESC');
 }
 
+// 结束一次会话（补上结束时间/实际时长/结束原因）；endedAt 为 NULL 的记录视为「未完成」
+export async function finishSession(
+  id: string,
+  patch: { endedAt: number; actualSeconds: number; finishReason: MealSession['finishReason'] }
+): Promise<void> {
+  const db = await getDb();
+  await db.runAsync(
+    'UPDATE meal_session SET endedAt = ?, actualSeconds = ?, finishReason = ? WHERE id = ?',
+    patch.endedAt,
+    patch.actualSeconds,
+    patch.finishReason,
+    id
+  );
+}
+
+// 当前进行中的会话（进程内存单例：杀进程后自然丢失，重启后 endedAt 为 NULL 的记录即「未完成」）
+let activeSessionId: string | null = null;
+export function setActiveSession(id: string | null): void {
+  activeSessionId = id;
+}
+export function getActiveSessionId(): string | null {
+  return activeSessionId;
+}
+
 // ---- notes ----
 export async function listNotes(): Promise<MealNote[]> {
   const db = await getDb();

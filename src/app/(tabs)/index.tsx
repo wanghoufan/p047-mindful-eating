@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { Orb } from '@/components/Orb';
 import { TipRotator } from '@/components/TipRotator';
 import type { DurationPreset } from '@/domain/types';
-import { uid, insertSession } from '@/storage/db';
+import { finishSession, insertSession, setActiveSession, uid } from '@/storage/db';
 import { formatMMSS, useMealTimer } from '@/state/useMealTimer';
 import { useSettings } from '@/settings/SettingsProvider';
 import { Radius, Space } from '@/theme/tokens';
@@ -21,6 +21,8 @@ export default function MealScreen() {
   const timer = useMealTimer();
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [reached, setReached] = useState(false);
+  const [lastFinishedId, setLastFinishedId] = useState<string | null>(null);
+  const sessionIdRef = useRef<string | null>(null);
 
   const tips = useMemo(() => t('tips', { returnObjects: true }) as string[], [t]);
 
@@ -30,41 +32,61 @@ export default function MealScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.durationPreset]);
 
-  // 到时提示（不发声）
+  // 开始即落库：无论之后正常结束、提前结束还是中途退出，这顿饭都有一条记录（未结束=未完成）
+  const onStart = () => {
+    const now = Date.now();
+    const id = uid();
+    sessionIdRef.current = id;
+    setActiveSession(id);
+    void insertSession({
+      id,
+      startedAt: now,
+      endedAt: null,
+      targetSeconds: Math.round(timer.targetMs / 1000),
+      actualSeconds: null,
+      finishReason: null,
+      createdAt: now,
+    });
+    timer.start();
+  };
+
+  // 到时达标：补全当前会话记录
   useEffect(() => {
     if (timer.status === 'completed' && !reached) {
       setReached(true);
-      void insertSession({
-        id: uid(),
-        startedAt: Date.now() - timer.targetMs,
-        endedAt: Date.now(),
-        targetSeconds: Math.round(timer.targetMs / 1000),
-        actualSeconds: Math.round(timer.targetMs / 1000),
-        finishReason: 'reached_target',
-        createdAt: Date.now(),
-      });
+      const id = sessionIdRef.current;
+      if (id) {
+        void finishSession(id, {
+          endedAt: Date.now(),
+          actualSeconds: Math.round(timer.targetMs / 1000),
+          finishReason: 'reached_target',
+        });
+        setActiveSession(null);
+        setLastFinishedId(id);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timer.status]);
 
-  const onPreset = (p: DurationPreset) => {
-    update({ durationPreset: p });
-  };
-
   const doEndEarly = () => {
     const actual = timer.actualSeconds;
-    void insertSession({
-      id: uid(),
-      startedAt: Date.now() - actual * 1000,
-      endedAt: Date.now(),
-      targetSeconds: Math.round(timer.targetMs / 1000),
-      actualSeconds: actual,
-      finishReason: 'early_end',
-      createdAt: Date.now(),
-    });
+    const id = sessionIdRef.current;
+    if (id) {
+      void finishSession(id, {
+        endedAt: Date.now(),
+        actualSeconds: actual,
+        finishReason: 'early_end',
+      });
+      setActiveSession(null);
+      setLastFinishedId(id);
+    }
     setConfirmEnd(false);
     setReached(false);
     timer.end();
+  };
+
+  const onPreset = (p: DurationPreset) => {
+    update({ durationPreset: p });
   };
 
   const running = timer.status === 'running';
@@ -86,30 +108,33 @@ export default function MealScreen() {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.content, { flexGrow: 1 }]} showsVerticalScrollIndicator={false}>
         <Text style={[styles.subtitle, { color: colors.muted }]}>{t('meal.subtitle')}</Text>
 
-        <View style={styles.hero}>
-          <Orb colors={colors} paused={paused} reduceMotion={settings.reduceMotion} size={142} />
-          <Text style={[styles.timer, { color: colors.fg }]}>
-            {formatMMSS(timer.remainingSeconds)}
-          </Text>
-          {done ? (
-            <Text style={[styles.status, { color: colors.accent }]}>{t('meal.targetReached')}</Text>
-          ) : ended ? (
-            <Text style={[styles.status, { color: colors.muted }]}>{t('meal.ended')}</Text>
-          ) : (
-            <Text style={[styles.status, { color: colors.accent }]}>
-              {active ? t('meal.started') : ' '}
+        {/* hero 垂直居中：占满 subtitle 与底部操作之间的空间，消除下半屏空白 */}
+        <View style={styles.heroFlex}>
+          <View style={styles.hero}>
+            <Orb colors={colors} paused={paused} reduceMotion={settings.reduceMotion} size={142} />
+            <Text style={[styles.timer, { color: colors.fg }]}>
+              {formatMMSS(timer.remainingSeconds)}
             </Text>
-          )}
-          <TipRotator
-            tips={tips}
-            intervalSeconds={settings.reminderIntervalSeconds}
-            enabled={settings.reminderEnabled}
-            paused={paused || !running ? paused : false}
-            colors={colors}
-          />
+            {done ? (
+              <Text style={[styles.status, { color: colors.accent }]}>{t('meal.targetReached')}</Text>
+            ) : ended ? (
+              <Text style={[styles.status, { color: colors.muted }]}>{t('meal.ended')}</Text>
+            ) : (
+              <Text style={[styles.status, { color: colors.accent }]}>
+                {active ? t('meal.started') : ' '}
+              </Text>
+            )}
+            <TipRotator
+              tips={tips}
+              intervalSeconds={settings.reminderIntervalSeconds}
+              enabled={settings.reminderEnabled}
+              paused={paused || !running ? paused : false}
+              colors={colors}
+            />
+          </View>
         </View>
 
         <View style={styles.pills}>
@@ -138,7 +163,7 @@ export default function MealScreen() {
 
         <View style={styles.actions}>
           {idle && (
-            <Pressable style={[styles.primary, { backgroundColor: colors.accent }]} onPress={timer.start}>
+            <Pressable style={[styles.primary, { backgroundColor: colors.accent }]} onPress={onStart}>
               <Text style={[styles.primaryText, { color: colors.onAccent }]}>{t('meal.start')}</Text>
             </Pressable>
           )}
@@ -169,7 +194,10 @@ export default function MealScreen() {
                 onPress={() => {
                   setReached(false);
                   timer.reset();
-                  router.push('/(tabs)/journal');
+                  router.push({
+                    pathname: '/(tabs)/journal',
+                    params: lastFinishedId ? { sessionId: lastFinishedId } : {},
+                  });
                 }}>
                 <Text style={[styles.primaryText, { color: colors.onAccent }]}>{t('meal.recordNote')}</Text>
               </Pressable>
@@ -177,6 +205,8 @@ export default function MealScreen() {
                 style={[styles.secondary, { borderColor: colors.stroke }]}
                 onPress={() => {
                   setReached(false);
+                  setLastFinishedId(null);
+                  sessionIdRef.current = null;
                   timer.reset();
                 }}>
                 <Text style={{ color: colors.fg, fontWeight: '600' }}>{t('meal.again')}</Text>
@@ -221,6 +251,7 @@ const styles = StyleSheet.create({
   brand: { fontSize: 17, fontWeight: '700' },
   content: { paddingHorizontal: 22, paddingBottom: 40 },
   subtitle: { fontSize: 13, marginTop: 4 },
+  heroFlex: { flex: 1, justifyContent: 'center', minHeight: 280 },
   hero: { alignItems: 'center', marginTop: 6 },
   timer: { fontSize: 63, fontWeight: '800', letterSpacing: -1, fontVariant: ['tabular-nums'] },
   status: { fontSize: 13, fontWeight: '600', marginTop: 2, minHeight: 18 },

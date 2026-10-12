@@ -6,8 +6,8 @@
 
 <p align="center">
   <img src="./docs/screenshots/meal.png" width="190" alt="用餐页：光球与 10 分钟倒计时">
-  <img src="./docs/screenshots/journal.png" width="190" alt="心得页：语音记录与历史心得">
-  <img src="./docs/screenshots/settings.png" width="190" alt="设置页：外观、语言、文字提醒与 AI Key">
+  <img src="./docs/screenshots/journal.png" width="190" alt="心得页：语音记录、AI 整理与历史心得">
+  <img src="./docs/screenshots/stats.png" width="190" alt="统计页：四项累计、近 7 天柱状图与用餐记录">
 </p>
 
 ## 这是什么
@@ -16,14 +16,18 @@
 
 - **吃饭时**：选 10 / 12 / 15 / 20 分钟，光球缓缓呼吸，大字倒数，倒计时下方一句慢食提示无声轮播——**全程不响铃、不振动**。
 - **吃完后**：把这顿饭的感受说一句（或直接打字），AI 只做一件事——去掉「然后就是」这类口水词，事实、否定、数字、时间原样保留，改完给你前后对照，确认了才存。
+- **回头看**：每一顿饭都自动留档，统计页把累计餐数、达标率、正念时长和最近 7 天的节奏一眼摊开。
 
-两个底部标签「用餐」「心得」，加一个顶部齿轮进设置，没有第三层菜单。
+三个底部标签「用餐」「心得」「统计」，加一个顶部齿轮进设置，没有第三层菜单。
 
 ## 功能
 
 - **光球计时**：四档时长、暂停 / 继续 / 提前结束（结束时记录实际用时，不是目标时长）；切后台或锁屏回来，按真实时间继续。
 - **无声文字轮播**：倒计时下方每 60 秒换一句（可设 30 / 90 / 120 秒或关闭），暂停时跟着暂停。
 - **心得记录**：语音或手输原文 →「AI 整理」→ 原文与整理稿对照 → 编辑确认或直接保存；历史可增删改，编辑中途切走草稿不丢。
+- **心得挂到那顿饭**：计时结束后点「记录一点心得」，这条心得会挂到刚结束的那次用餐上，历史里标出「关联用餐 01:20」这样的实际用时。
+- **用餐历史**：一按「开始用餐」就落库——正常吃完、提前结束，甚至计时中途退出应用，都会留下一条记录（没结束的记为「未完成」，并注明「计时中退出，自动记录」）。
+- **统计**：累计用餐、目标达标率、累计正念分钟、平均每次四张卡片，加最近 7 天正念分钟柱状图（按本地时区分组，今天高亮）。
 - **AI 整理（BYOK）**：首版接 DeepSeek，Key 由你自己填；不给建议、不做健康判断，只去口水词。
 - **主题与语言**：浅色 / 深色 / 跟随系统（默认跟随），简体中文 / English / 跟随系统；切换不丢当前计时与草稿。
 - **本机存储**：用餐记录、心得、设置都存在手机本地（SQLite），无账号、无云同步。
@@ -51,7 +55,7 @@ npx expo start          # 开发调试（扫码或模拟器）
 npx expo run:android    # 生成/安装 Development Build 到真机或模拟器
 ```
 
-已发布安装包：打开 [Releases · v1.0.0](https://github.com/wanghoufan/p047-mindful-eating/releases/tag/v1.0.0)，下载 `BiteTempo-1.0.0-universal.apk`（Android 7.0+ 通用包，页面内有 SHA-256 与安装说明；仓库为私有，下载需登录你的 GitHub 账号）。
+已发布安装包：打开 [Releases · v1.0.0](https://github.com/wanghoufan/p047-mindful-eating/releases/tag/v1.0.0)，下载 `BiteTempo-1.0.0-universal.apk`（Android 7.0+ 通用包，页面内有 SHA-256 与安装说明）。这份安装包对应首发 v1.0.0；**用餐历史与统计**是之后新增的功能，可按下文命令自行构建最新版。
 
 本地构建产物在：
 
@@ -68,7 +72,7 @@ npm run lint
 
 ## 技术栈
 
-Expo SDK 57 / React Native 0.86 / TypeScript，`expo-router` 管两页与设置；`expo-sqlite` 存数据、`expo-secure-store` 存 Key、`i18next` 管中英文；原生语音识别通过一个最小 Kotlin 桥接（Android SpeechRecognizer）。计时用「单调时钟 + 挂钟校正」的状态机，不靠每秒累减，所以锁屏回来不会跑偏。
+Expo SDK 57 / React Native 0.86 / TypeScript，`expo-router` 管三个 Tab 与设置；`expo-sqlite` 存数据、`expo-secure-store` 存 Key、`i18next` 管中英文；原生语音识别通过一个最小 Kotlin 桥接（Android SpeechRecognizer）。计时用「单调时钟 + 挂钟校正」的状态机，不靠每秒累减，所以锁屏回来不会跑偏；统计按本地时区在 JS 侧聚合，避开跨时区日界线的错算。
 
 ## 文档
 
@@ -79,4 +83,4 @@ Expo SDK 57 / React Native 0.86 / TypeScript，`expo-router` 管两页与设置�
 
 ## 状态
 
-v1.0.0，安卓首发，**开发收尾阶段**：安装包已在 GitHub Release（`v1.0.0`）提供，未上架应用市场、无网页版。个人学习项目。
+v1.0.0，安卓首发，**开发收尾阶段**：安装包已在 GitHub Release（`v1.0.0`）提供，最新的用餐历史与统计功能可从源码构建体验；未上架应用市场、无网页版。个人学习项目。

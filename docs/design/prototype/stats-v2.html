@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>慢食刻 BiteTempo · 统计与首页布局 增量原型 v2</title>
+<style>
+:root{
+  --radius-card:9px; --radius-control:7px; --radius-pill:7px; --radius-sheet:16px;
+  --font:ui-sans-serif,-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;
+}
+html[data-theme="light"]{
+  --bg:#f2f7f5; --panel:#ffffff; --panel2:#e8f1ee; --fg:#0a1a16; --muted:#5b6b67;
+  --stroke:rgba(20,60,52,.14); --accent:#1f9d84; --accent2:#17816c;
+  --glow:rgba(31,157,132,.16); --onAccent:#ffffff; --danger:#c0432f;
+}
+html[data-theme="dark"]{
+  --bg:#0b1014; --panel:#172127; --panel2:#1b2a32; --fg:#ecfbf6; --muted:#9db0ad;
+  --stroke:rgba(113,150,158,.23); --accent:#94e8cf; --accent2:#72b4a3;
+  --glow:rgba(76,245,191,.20); --onAccent:#0a2827; --danger:#ff8f7a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);-webkit-font-smoothing:antialiased;line-height:1.5;min-height:100vh;transition:background .3s,color .3s}
+button,textarea,input{font:inherit}
+button{cursor:pointer;border:none;background:none;color:inherit;padding:0}
+button:disabled{cursor:not-allowed;opacity:.45}
+button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+::selection{background:#1f9d8433}
+
+.layout{display:grid;grid-template-columns:300px minmax(340px,430px);gap:56px;max-width:960px;margin:auto;padding:48px 26px 80px;align-items:start;justify-content:center}
+@media(max-width:860px){.layout{grid-template-columns:1fr;gap:30px;padding-top:28px}}
+.side{padding-top:30px}
+.eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:750}
+.side h1{font-size:30px;line-height:1.25;margin:14px 0;font-weight:760;letter-spacing:-.03em}
+.side p{color:var(--muted);font-size:13.5px;line-height:1.9;margin:0 0 14px}
+.ctl{margin-top:18px}
+.ctl-label{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.06em;margin-bottom:7px}
+.seg{display:flex;gap:0;border:1px solid var(--stroke);border-radius:var(--radius-control);overflow:hidden;background:var(--panel)}
+.seg button{flex:1;padding:9px 4px;font-size:12.5px;font-weight:650;color:var(--muted);border-right:1px solid var(--stroke)}
+.seg button:last-child{border-right:none}
+.seg button.on{background:var(--accent);color:var(--onAccent)}
+.demo-note{margin-top:20px;border:1px dashed var(--stroke);border-radius:var(--radius-card);padding:12px 14px;font-size:12px;color:var(--muted);line-height:1.8}
+.demo-note b{color:var(--fg)}
+
+.phone-wrap{display:flex;justify-content:center}
+.phone{width:100%;max-width:392px;height:820px;border-radius:43px;border:1px solid var(--stroke);background:var(--bg);box-shadow:0 30px 70px rgba(0,0,0,.22),0 4px 16px rgba(0,0,0,.10);display:flex;flex-direction:column;overflow:hidden;position:relative}
+.statusbar{display:flex;justify-content:space-between;align-items:center;padding:12px 26px 4px;font-size:13px;font-weight:650;flex:none}
+.statusbar .right{display:flex;gap:5px;align-items:center;font-size:11px;color:var(--muted)}
+#screen{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+.page{flex:1;display:flex;flex-direction:column;min-height:0;padding:0 22px}
+.scroll{flex:1;overflow-y:auto;min-height:0;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 0 8px;flex:none}
+.brandRow{display:flex;align-items:center;gap:10px}
+.brandMark{width:26px;height:26px;border-radius:7px;background:var(--accent)}
+.brand{font-size:17px;font-weight:750}
+.title{font-size:24px;font-weight:800;letter-spacing:-.5px}
+.gear{color:var(--muted);font-size:20px;line-height:1;padding:6px}
+.subtitle{font-size:13px;color:var(--muted);margin:2px 0 0}
+
+/* ===== 用餐页（布局修正：hero 垂直居中，操作贴底） ===== */
+.meal-hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:0}
+.orb{position:relative;width:150px;height:150px;margin-bottom:14px}
+.orb .ring{position:absolute;inset:-16px;border-radius:50%;border:2px dashed color-mix(in srgb,var(--accent) 55%,transparent);animation:spin 26s linear infinite}
+.orb .halo{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 34% 30%,color-mix(in srgb,var(--accent) 82%,#fff),var(--accent) 62%);box-shadow:0 18px 44px var(--glow)}
+.orb.paused .halo{filter:saturate(.55) brightness(.92)}
+.orb.paused .ring{animation-play-state:paused}
+@keyframes spin{to{transform:rotate(360deg)}}
+html[data-motion="reduce"] .orb .ring{animation:none}
+.timer{font-size:60px;font-weight:800;letter-spacing:-1px;font-variant-numeric:tabular-nums;line-height:1.05}
+.status{font-size:13px;font-weight:650;color:var(--accent);min-height:19px}
+.tip{font-size:13px;font-weight:650;color:var(--accent);margin-top:2px;min-height:20px;opacity:.9}
+.meal-bottom{flex:none;padding:6px 0 18px}
+.pills{display:flex;gap:8px}
+.pill{flex:1;text-align:center;padding:12px 0;border-radius:var(--radius-pill);border:1px solid var(--stroke);background:var(--panel);color:var(--muted);font-size:13px;font-weight:650}
+.pill.on{border-color:var(--accent);background:var(--panel2);color:var(--fg)}
+.pill:disabled{opacity:.45}
+.actions{display:flex;gap:10px;margin-top:20px}
+.btn{flex:1;min-height:53px;border-radius:var(--radius-control);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:750;transition:opacity .15s}
+.btn.primary{background:var(--accent);color:var(--onAccent)}
+.btn.secondary{border:1px solid var(--stroke);color:var(--fg);font-weight:650;background:transparent}
+.btn:disabled{opacity:.5}
+
+/* ===== 心得页 ===== */
+.voiceBtn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:56px;border-radius:var(--radius-control);background:var(--accent);color:var(--onAccent);font-size:16px;font-weight:750;margin-top:2px}
+.label{font-size:12px;color:var(--muted);margin-top:8px}
+.inputBox{width:100%;min-height:110px;border-radius:var(--radius-control);border:1px solid var(--stroke);background:var(--panel);color:var(--fg);padding:14px;font-size:14px;line-height:22px;resize:none}
+.rowBtns{display:flex;gap:10px;margin-top:10px}
+.rowBtns .btn{min-height:50px;font-size:15px}
+.section{font-size:16px;font-weight:750;margin-top:18px}
+
+/* ===== 统计页 ===== */
+.statGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+.statCard{background:var(--panel);border:1px solid var(--stroke);border-radius:var(--radius-card);padding:14px 15px}
+.statCard .v{font-size:26px;font-weight:800;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.statCard .v small{font-size:13px;font-weight:650;color:var(--muted);margin-left:2px}
+.statCard .k{font-size:12px;color:var(--muted);font-weight:600;margin-top:2px}
+.card{background:var(--panel);border:1px solid var(--stroke);border-radius:var(--radius-card);padding:15px}
+.chartCard{margin-top:10px}
+.chartTitle{font-size:13px;font-weight:700;margin-bottom:12px;display:flex;justify-content:space-between;align-items:baseline}
+.chartTitle .u{font-size:11px;color:var(--muted);font-weight:600}
+.bars{display:flex;gap:9px;align-items:flex-end;height:110px}
+.barCol{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+.barVal{font-size:10px;color:var(--muted);font-weight:650;line-height:1}
+.bar{width:100%;max-width:30px;border-radius:6px 6px 3px 3px;background:color-mix(in srgb,var(--accent2) 42%,transparent);min-height:3px}
+.barCol.today .bar{background:var(--accent);box-shadow:0 0 14px var(--glow)}
+.barCol.today .barDay{color:var(--accent);font-weight:750}
+.barDay{font-size:10.5px;color:var(--muted);font-weight:600}
+.recList{margin-top:12px;display:flex;flex-direction:column;gap:10px;padding-bottom:26px}
+.recCard{background:var(--panel);border:1px solid var(--stroke);border-radius:var(--radius-card);padding:14px 15px}
+.recTop{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.recDate{font-size:12px;font-weight:700;color:var(--accent)}
+.tag{font-size:10.5px;font-weight:750;padding:3px 8px;border-radius:99px;letter-spacing:.02em;white-space:nowrap}
+.tag.hit{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
+.tag.early{background:color-mix(in srgb,var(--accent2) 20%,transparent);color:var(--accent2)}
+.tag.abandon{background:color-mix(in srgb,var(--danger) 14%,transparent);color:var(--danger)}
+.recMid{font-size:14px;font-weight:650;margin-top:6px;font-variant-numeric:tabular-nums}
+.recMid .dim{color:var(--muted);font-weight:600;font-size:12.5px}
+.recNote{font-size:12.5px;color:var(--muted);margin-top:7px;line-height:1.65;border-top:1px dashed var(--stroke);padding-top:7px}
+.recNote .lk{color:var(--accent);font-weight:700;margin-right:4px}
+.empty{color:var(--muted);font-size:13px;margin-top:14px}
+
+/* ===== 笔记卡（关联徽标 C1） ===== */
+.noteCard{background:var(--panel);border:1px solid var(--stroke);border-radius:var(--radius-card);padding:15px;margin-bottom:10px}
+.noteDate{font-size:11px;font-weight:650;color:var(--accent)}
+.linkBadge{display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:11px;font-weight:700;color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,transparent);border-radius:99px;padding:4px 10px}
+.noteText{font-size:14px;line-height:21px;margin-top:6px}
+.noteActs{display:flex;gap:16px;margin-top:10px;font-size:13px}
+.noteActs .del{color:var(--danger)}
+.noteActs .ed{color:var(--muted)}
+
+/* ===== TabBar ===== */
+.tabbar{flex:none;display:flex;border-top:1px solid var(--stroke);background:var(--panel);padding:10px 26px calc(12px + 4px)}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--muted);font-size:11px;font-weight:650}
+.tab.on{color:var(--accent)}
+.tab svg{width:23px;height:23px}
+
+/* ===== 弹层 / Toast ===== */
+.overlay{position:absolute;inset:0;background:rgba(1,7,19,.55);display:flex;align-items:center;justify-content:center;padding:24px;z-index:20}
+.dialog{width:100%;background:var(--panel2);border:1px solid var(--stroke);border-radius:var(--radius-sheet);padding:22px}
+.dialog h3{margin:0 0 10px;font-size:19px;font-weight:750}
+.dialog p{margin:0;color:var(--muted);line-height:1.7;font-size:14px}
+.dialog .actions{margin-top:22px}
+#toast{position:absolute;left:50%;bottom:96px;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--stroke);color:var(--fg);font-size:12.5px;font-weight:650;padding:9px 16px;border-radius:99px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:30;max-width:85%;text-align:center}
+#toast.show{opacity:1}
+.wm{position:absolute;top:10px;right:14px;font-size:9.5px;color:var(--muted);opacity:.55;letter-spacing:.05em;z-index:5}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="side">
+    <div class="eyebrow">P047 · 慢食刻 BiteTempo</div>
+    <h1>统计与首页布局<br>增量原型 v2</h1>
+    <p>本次增量确认两件事：① 新增「统计」Tab（累计四项 + 近 7 天柱状图 + 每次用餐记录列表）；② 首页布局修正——光球区域整体垂直居中、操作按钮贴底，消除下半屏空白。</p>
+    <p id="sideIntro">配色、圆角、字号与正式 APP 的 C 方向 token 一致；浅深色与中英文可在下方切换。</p>
+    <div class="ctl">
+      <div class="ctl-label" data-i18n="ctlTheme">主题 THEME</div>
+      <div class="seg" id="segTheme">
+        <button data-theme="light" data-i18n="ctlLight">浅色</button>
+        <button data-theme="dark" data-i18n="ctlDark">深色</button>
+        <button data-theme="system" data-i18n="ctlSystem">跟随系统</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <div class="ctl-label" data-i18n="ctlLang">语言 LANGUAGE</div>
+      <div class="seg" id="segLang">
+        <button data-lang="zh">中文</button>
+        <button data-lang="en">English</button>
+      </div>
+    </div>
+    <div class="demo-note" data-i18n="demoNote">※ 列表与图表均为<b>模拟演示数据</b>，与真实 APP 无关；「未完成」记录演示的是中途退出 APP 时自动补记的能力（拍板项 D1）。</div>
+  </aside>
+
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="wm">PROTOTYPE · 模拟数据</div>
+      <div class="statusbar"><span>16:37</span><span class="right">5G ▮▮▮ 100%</span></div>
+      <div id="screen"></div>
+      <nav class="tabbar" id="tabbar"></nav>
+      <div id="overlayHost"></div>
+      <div id="toast"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ i18n ============ */
+const I18N = {
+  zh: {
+    tabs:{meal:'用餐',journal:'心得',stats:'统计'},
+    meal:{subtitle:'选择时长，开始一次安静的用餐',min:'{n} 分钟',
+      start:'开始用餐',pause:'暂停',resume:'继续',end:'结束用餐',
+      running:'本次用餐进行中',paused:'已暂停',done:'本次用餐已结束',ended:'已提前结束',
+      confirmTitle:'确认结束？',confirmBody:'还没到目标时长，现在结束将记为一次「提前结束」。',
+      cancel:'取消',confirmEnd:'确认结束',
+      recordNote:'记录一点心得',again:'再来一次'},
+    tips:['咀嚼几次，再咽下去。','放下筷子，感受一下饱腹感。','慢一点，尝出食物的味道。'],
+    journal:{title:'心得',voice:'语音记录',voiceHint:'演示：正式版调用系统语音识别',stop:'停止',
+      rawLabel:'原始记录',rawPh:'这顿吃了什么，吃的时候感受如何…',polish:'AI 润色',polishing:'润色中…',direct:'直接保存',
+      polishLabel:'润色结果',history:'历史',empty:'还没有记录',edit:'编辑',del:'删除',
+      demoFill:'填入演示口述',linkedMeal:'关联用餐 {t}'},
+    stats:{title:'统计',
+      c1:'累计用餐',c2:'目标达标率',c3:'累计正念',c4:'平均每次',
+      times:'次',percent:'',minutes:'分钟',
+      chartTitle:'最近 7 天',chartUnit:'每日正念分钟',
+      listTitle:'用餐记录',
+      tagHit:'达标',tagEarly:'提前结束',tagAbandon:'未完成',
+      target:'目标',autoNote:'计时中退出 APP，自动补记',
+      empty:'还没有用餐记录，去吃第一顿慢饭吧。'},
+    ctl:{theme:'主题 THEME',light:'浅色',dark:'深色',system:'跟随系统',
+      demoNote:'※ 列表与图表均为模拟演示数据，与真实 APP 无关；「未完成」记录演示的是中途退出 APP 时自动补记的能力（拍板项 D1）。'},
+    toast:{gear:'原型演示：主题与语言在左侧面板切换',voice:'演示：正式版在此调用系统语音识别',
+      edit:'演示：编辑功能与现有版本一致',del:'演示：删除功能与现有版本一致',
+      saved:'已保存（演示，不影响模拟数据）',polished:'AI 润色完成（演示）',
+      noText:'先写点什么或填入演示口述'},
+    side:{p1:'本次增量确认两件事：① 新增「统计」Tab（累计四项 + 近 7 天柱状图 + 每次用餐记录列表）；② 首页布局修正——光球区域整体垂直居中、操作按钮贴底，消除下半屏空白。'},
+  },
+  en: {
+    tabs:{meal:'Meal',journal:'Notes',stats:'Stats'},
+    meal:{subtitle:'Pick a duration and start a quiet meal',min:'{n} min',
+      start:'Start',pause:'Pause',resume:'Resume',end:'End meal',
+      running:'Meal in progress',paused:'Paused',done:'Meal finished',ended:'Ended early',
+      confirmTitle:'End now?',confirmBody:'You have not reached the target yet. This will be recorded as "ended early".',
+      cancel:'Cancel',confirmEnd:'End now',
+      recordNote:'Write a note',again:'Start again'},
+    tips:['Chew a few more times before swallowing.','Put down the fork, notice fullness.','Slow down, taste the food.'],
+    journal:{title:'Notes',voice:'Voice note',voiceHint:'Demo: native speech in real app',stop:'Stop',
+      rawLabel:'Raw note',rawPh:'What did you eat, how did it feel…',polish:'AI polish',polishing:'Polishing…',direct:'Save',
+      polishLabel:'Polished',history:'History',empty:'No notes yet',edit:'Edit',del:'Delete',
+      demoFill:'Insert demo dictation',linkedMeal:'Linked meal {t}'},
+    stats:{title:'Stats',
+      c1:'Total meals',c2:'Target rate',c3:'Mindful time',c4:'Avg per meal',
+      times:'',percent:'',minutes:'min',
+      chartTitle:'Last 7 days',chartUnit:'mindful min / day',
+      listTitle:'Meal records',
+      tagHit:'On target',tagEarly:'Ended early',tagAbandon:'Incomplete',
+      target:'target',autoNote:'Auto-recorded after leaving the app',
+      empty:'No meals yet. Enjoy your first slow meal.'},
+    ctl:{theme:'THEME',light:'Light',dark:'Dark',system:'System',
+      demoNote:'※ Lists and charts are simulated demo data. The "Incomplete" row demonstrates auto-recording when the app is closed mid-meal (decision D1).'},
+    toast:{gear:'Demo: switch theme & language in the left panel',voice:'Demo: native speech recognition in real app',
+      edit:'Demo: same edit behavior as current version',del:'Demo: same delete behavior as current version',
+      saved:'Saved (demo, mock data unchanged)',polished:'AI polish done (demo)',
+      noText:'Write something or insert demo text first'},
+    side:{p1:'Two things to confirm: 1) new "Stats" tab (4 totals + 7-day bars + per-meal list); 2) home layout fix — orb block vertically centered, actions anchored to bottom.'},
+  }
+};
+
+/* ============ 模拟数据（相对今天生成，避免过期） ============ */
+const DAY = 86400000;
+function atDaysAgo(days, h, m){ const d=new Date(Date.now()-days*DAY); d.setHours(h,m,0,0); return d.getTime(); }
+const SESSIONS = [
+  {id:'s1', startedAt:atDaysAgo(0,12,26), actualSec:720, targetSec:720, reason:'hit',  note:'今天慢慢吃完一碗面，比平时慢了十分钟，饭后很舒服。'},
+  {id:'s2', startedAt:atDaysAgo(0,8,4),   actualSec:272, targetSec:720, reason:'abandon', note:null},
+  {id:'s3', startedAt:atDaysAgo(1,19,2),  actualSec:495, targetSec:720, reason:'early', note:null},
+  {id:'s4', startedAt:atDaysAgo(1,12,10), actualSec:900, targetSec:900, reason:'hit',  note:'午餐和同事一起，特意放慢了速度。'},
+  {id:'s5', startedAt:atDaysAgo(2,19,30), actualSec:600, targetSec:600, reason:'hit',  note:null},
+  {id:'s6', startedAt:atDaysAgo(3,12,0),  actualSec:400, targetSec:600, reason:'early', note:null},
+  {id:'s7', startedAt:atDaysAgo(4,20,5),  actualSec:1200,targetSec:1200,reason:'hit',  note:null},
+  {id:'s8', startedAt:atDaysAgo(5,12,30), actualSec:600, targetSec:600, reason:'hit',  note:null},
+];
+const NOTES = [
+  {id:'n1', sessionId:'s1', text:'今天慢慢吃完一碗面，比平时慢了十分钟，饭后很舒服。', at:atDaysAgo(0,12,42)},
+  {id:'n2', sessionId:null, text:'晚饭有点赶，但至少没有边看手机边吃。', at:atDaysAgo(1,19,20)},
+];
+
+/* ============ 状态 ============ */
+const state = {
+  lang:'zh', themeMode:'system', resolvedTheme:'dark',
+  tab:'stats',                       // 默认落在要确认的新页面上
+  preset:600, timer:{status:'idle', remain:600, target:600, tick:null},
+  polished:null, raw:'',
+};
+const t = () => I18N[state.lang];
+
+/* ============ 工具 ============ */
+const pad = n => String(n).padStart(2,'0');
+const mmss = s => `${pad(Math.floor(s/60))}:${pad(s%60)}`;
+function fmtDT(ts){ const d=new Date(ts);
+  if(state.lang==='zh') return `${d.getMonth()+1}月${d.getDate()}日 ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const wd=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()];
+  return `${d.getMonth()+1}/${d.getDate()} ${wd} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function dayLabel(ts){ const d=new Date(ts); const today=new Date(); const yest=new Date(Date.now()-DAY);
+  const same=(a,b)=>a.toDateString()===b.toDateString();
+  if(same(d,today)) return state.lang==='zh'?'今天':'Today';
+  if(same(d,yest)) return state.lang==='zh'?'昨天':'Yesterday';
+  return state.lang==='zh'?`${d.getMonth()+1}.${d.getDate()}`:`${d.getMonth()+1}/${d.getDate()}`;
+}
+function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show');
+  clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove('show'),1800); }
+
+/* ============ 统计（由模拟数据实时聚合，非写死） ============ */
+function calcStats(){
+  const n = SESSIONS.length;
+  const totalMin = Math.round(SESSIONS.reduce((a,s)=>a+s.actualSec,0)/60);
+  const hits = SESSIONS.filter(s=>s.reason==='hit').length;
+  const avg = Math.round(SESSIONS.reduce((a,s)=>a+s.actualSec,0)/n/60*10)/10;
+  return {n, totalMin, rate:Math.round(hits/n*100), avg};
+}
+function last7Days(){
+  const out=[];
+  for(let i=6;i>=0;i--){
+    const dayStart=new Date(Date.now()-i*DAY); dayStart.setHours(0,0,0,0);
+    const dayEnd=dayStart.getTime()+DAY;
+    const sec=SESSIONS.filter(s=>s.startedAt>=dayStart.getTime()&&s.startedAt<dayEnd)
+      .reduce((a,s)=>a+s.actualSec,0);
+    out.push({label:dayLabel(dayStart.getTime()), min:Math.round(sec/60), today:i===0});
+  }
+  return out;
+}
+
+/* ============ 图标 ============ */
+const ICONS = {
+  meal:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M7 3v7M4.5 3v4a2.5 2.5 0 0 0 5 0V3M7 10v11"/><path d="M17 3c-1.8 1.5-2.5 4-2.5 6.5 0 1.5 1 2.5 2.5 2.5V21M17 3v9"/></svg>`,
+  journal:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>`,
+  stats:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/></svg>`,
+  gear:`<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.01a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55h.01a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.01a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/></svg>`,
+};
+
+/* ============ 渲染 ============ */
+function renderTabbar(){
+  const tb=t().tabs;
+  document.getElementById('tabbar').innerHTML = ['meal','journal','stats'].map(k=>`
+    <button class="tab ${state.tab===k?'on':''}" data-tab="${k}">${ICONS[k]}<span>${tb[k]}</span></button>`).join('');
+  document.querySelectorAll('#tabbar .tab').forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;renderScreen();renderTabbar();});
+}
+
+function pageTop(titleText, brand=false){
+  return `<div class="topbar">${brand
+    ?`<div class="brandRow"><div class="brandMark"></div><span class="brand">${state.lang==='zh'?'慢食刻':'BiteTempo'}</span></div>`
+    :`<span class="title">${titleText}</span>`}
+    <button class="gear" onclick="toast(t().toast.gear)" aria-label="settings">${ICONS.gear}</button></div>`;
+}
+
+/* ---- 用餐页（布局修正演示） ---- */
+function renderMeal(){
+  const L=t().meal, T=state.timer;
+  const running=T.status==='running', paused=T.status==='paused', done=T.status==='done', ended=T.status==='ended';
+  const active=running||paused;
+  const status = done?L.done : ended?L.ended : running?L.running : paused?L.paused : '';
+  const tip = t().tips[Math.floor(Date.now()/60000)%t().tips.length];
+  return `<div class="page">
+    ${pageTop(null,true)}
+    <p class="subtitle">${L.subtitle}</p>
+    <div class="meal-hero">
+      <div class="orb ${paused?'paused':''}"><div class="ring"></div><div class="halo"></div></div>
+      <div class="timer">${mmss(T.remain)}</div>
+      <div class="status">${status}</div>
+      ${active?`<div class="tip">${tip}</div>`:''}
+    </div>
+    <div class="meal-bottom">
+      <div class="pills">${[600,720,900,1200].map(p=>`
+        <button class="pill ${state.preset===p?'on':''}" data-preset="${p}" ${active?'disabled':''}>${L.min.replace('{n}',p/60)}</button>`).join('')}
+      </div>
+      <div class="actions">${
+        T.status==='idle' ? `<button class="btn primary" onclick="startTimer()">${L.start}</button>` :
+        running ? `<button class="btn primary" onclick="pauseTimer()">${L.pause}</button><button class="btn secondary" onclick="askEnd()">${L.end}</button>` :
+        paused ? `<button class="btn primary" onclick="resumeTimer()">${L.resume}</button><button class="btn secondary" onclick="askEnd()">${L.end}</button>` :
+        `<button class="btn primary" onclick="gotoJournal()">${L.recordNote}</button><button class="btn secondary" onclick="resetTimer()">${L.again}</button>`
+      }</div>
+    </div>
+  </div>`;
+}
+function startTimer(){ const T=state.timer; T.status='running'; T.target=state.preset; T.remain=state.preset;
+  T.tick=setInterval(()=>{ if(state.timer.status==='running'){ state.timer.remain--;
+    if(state.timer.remain<=0){ state.timer.remain=0; state.timer.status='done'; clearInterval(state.timer.tick);
+      if(state.tab==='meal')renderScreen(); } else if(state.tab==='meal') document.querySelector('.timer').textContent=mmss(state.timer.remain);
+  }},1000); renderScreen(); }
+function pauseTimer(){ state.timer.status='paused'; renderScreen(); }
+function resumeTimer(){ state.timer.status='running'; renderScreen(); }
+function resetTimer(){ clearInterval(state.timer.tick); state.timer={status:'idle',remain:state.preset,target:state.preset,tick:null}; renderScreen(); }
+function askEnd(){
+  const L=t().meal;
+  document.getElementById('overlayHost').innerHTML=`<div class="overlay"><div class="dialog">
+    <h3>${L.confirmTitle}</h3><p>${L.confirmBody}</p>
+    <div class="actions"><button class="btn secondary" onclick="closeOverlay()">${L.cancel}</button>
+    <button class="btn primary" onclick="endEarly()">${L.confirmEnd}</button></div></div></div>`;
+}
+function closeOverlay(){ document.getElementById('overlayHost').innerHTML=''; }
+function endEarly(){ clearInterval(state.timer.tick); state.timer.status='ended'; closeOverlay(); renderScreen(); }
+function gotoJournal(){ state.tab='journal'; renderScreen(); renderTabbar(); }
+
+/* ---- 心得页 ---- */
+function renderJournal(){
+  const L=t().journal;
+  const notes=NOTES.map(n=>{
+    const s=n.sessionId?SESSIONS.find(x=>x.id===n.sessionId):null;
+    return `<div class="noteCard">
+      <div class="noteDate">${fmtDT(n.at)}</div>
+      ${s?`<div class="linkBadge">⏱ ${L.linkedMeal.replace('{t}',mmss(s.actualSec))}</div>`:''}
+      <div class="noteText">${n.text}</div>
+      <div class="noteActs"><button class="ed" onclick="toast(t().toast.edit)">${L.edit}</button>
+      <button class="del" onclick="toast(t().toast.del)">${L.del}</button></div>
+    </div>`;}).join('');
+  return `<div class="page">
+    ${pageTop(L.title)}
+    <div class="scroll" style="padding-bottom:20px">
+      <button class="voiceBtn" onclick="toast(t().toast.voice)">🎤 ${L.voice}</button>
+      <div class="label">${L.rawLabel}</div>
+      <textarea class="inputBox" id="rawBox" placeholder="${L.rawPh}">${state.raw}</textarea>
+      <div class="rowBtns">
+        <button class="btn primary" onclick="doPolish()">${state.polished===null?L.polish:L.polishing}</button>
+        <button class="btn secondary" onclick="doSave()" style="flex:0 0 auto;min-width:110px">${L.direct}</button>
+      </div>
+      <button class="btn secondary" style="margin-top:10px;min-height:42px;font-size:13px" onclick="fillDemo()">${L.demoFill}</button>
+      ${state.polished?`<div class="label">${L.polishLabel}</div><textarea class="inputBox" style="min-height:80px">${state.polished}</textarea>`:''}
+      <div class="section">${L.history}</div>
+      <div style="margin-top:10px">${notes}</div>
+    </div>
+  </div>`;
+}
+function fillDemo(){ state.raw = state.lang==='zh'
+  ?'今天中午吃了外卖，吃之前挺饿的，边吃边想着工作，后来提醒响了才注意到自己吃太快。'
+  :'Had takeout for lunch. Was checking work emails while eating until the reminder pulled me back.';
+  state.polished=null; renderScreen(); }
+function doPolish(){ const box=document.getElementById('rawBox'); state.raw=box?box.value:'';
+  if(!state.raw.trim()){toast(t().toast.noText);return;}
+  state.polished=null; renderScreen();
+  setTimeout(()=>{ state.polished = state.lang==='zh'
+    ?'午餐吃了外卖。起初很饿，前半程边看工作消息边吃，节奏偏快；提醒响起后放慢速度，专心咀嚼，饭后满足感比平时更好。'
+    :'Takeout for lunch. Started hungry, first half rushed with work messages; after the reminder I slowed down, chewed properly, and felt more satisfied than usual.';
+    renderScreen(); toast(t().toast.polished); },600); }
+function doSave(){ const box=document.getElementById('rawBox'); state.raw=box?box.value:'';
+  if(!state.raw.trim()){toast(t().toast.noText);return;}
+  state.raw=''; state.polished=null; renderScreen(); toast(t().toast.saved); }
+
+/* ---- 统计页（新增） ---- */
+function renderStats(){
+  const L=t().stats, S=calcStats();
+  const days=last7Days(); const max=Math.max(...days.map(d=>d.min),1);
+  const bars=days.map(d=>`
+    <div class="barCol ${d.today?'today':''}">
+      <span class="barVal">${d.min>0?d.min:''}</span>
+      <div class="bar" style="height:${Math.max(4,Math.round(d.min/max*82))}%"></div>
+      <span class="barDay">${d.label}</span>
+    </div>`).join('');
+  const order={hit:0,early:1,abandon:2};
+  const recs=[...SESSIONS].sort((a,b)=>b.startedAt-a.startedAt).map(s=>{
+    const tag = s.reason==='hit'?`<span class="tag hit">${L.tagHit}</span>`
+      : s.reason==='early'?`<span class="tag early">${L.tagEarly}</span>`
+      : `<span class="tag abandon">${L.tagAbandon}</span>`;
+    return `<div class="recCard">
+      <div class="recTop"><span class="recDate">${fmtDT(s.startedAt)}</span>${tag}</div>
+      <div class="recMid">${mmss(s.actualSec)} <span class="dim">· ${L.target} ${s.targetSec/60} ${t().stats.minutes}</span></div>
+      ${s.note?`<div class="recNote"><span class="lk">❝</span>${s.note}</div>`
+        : s.reason==='abandon'?`<div class="recNote"><span class="lk">⏻</span>${L.autoNote}</div>`:''}
+    </div>`;}).join('');
+  return `<div class="page">
+    ${pageTop(L.title)}
+    <div class="scroll" style="padding-bottom:20px">
+      <div class="statGrid">
+        <div class="statCard"><div class="v">${S.n}<small>${t().stats.times}</small></div><div class="k">${L.c1}</div></div>
+        <div class="statCard"><div class="v">${S.rate}<small>%</small></div><div class="k">${L.c2}</div></div>
+        <div class="statCard"><div class="v">${S.totalMin}<small>${t().stats.minutes}</small></div><div class="k">${L.c3}</div></div>
+        <div class="statCard"><div class="v">${S.avg}<small>${t().stats.minutes}</small></div><div class="k">${L.c4}</div></div>
+      </div>
+      <div class="card chartCard">
+        <div class="chartTitle"><span>${L.chartTitle}</span><span class="u">${L.chartUnit}</span></div>
+        <div class="bars">${bars}</div>
+      </div>
+      <div class="section" style="margin-top:16px">${L.listTitle}</div>
+      <div class="recList">${recs}</div>
+    </div>
+  </div>`;
+}
+
+function renderScreen(){
+  const host=document.getElementById('screen');
+  host.innerHTML = state.tab==='meal'?renderMeal() : state.tab==='journal'?renderJournal() : renderStats();
+  document.querySelectorAll('.pill[data-preset]').forEach(b=>b.onclick=()=>{state.preset=+b.dataset.preset;renderScreen();});
+  const raw=document.getElementById('rawBox');
+  if(raw) raw.oninput=e=>{state.raw=e.target.value;};
+}
+
+/* ============ 主题 / 语言 ============ */
+const mq=window.matchMedia('(prefers-color-scheme: dark)');
+function applyTheme(){
+  const mode=state.themeMode;
+  const dark = mode==='dark' || (mode==='system' && mq.matches);
+  state.resolvedTheme = dark?'dark':'light';
+  document.documentElement.dataset.theme=state.resolvedTheme;
+  document.documentElement.dataset.motion='full';
+  document.querySelectorAll('#segTheme button').forEach(b=>b.classList.toggle('on',b.dataset.theme===mode));
+}
+mq.addEventListener('change',()=>{ if(state.themeMode==='system') applyTheme(); });
+document.querySelectorAll('#segTheme button').forEach(b=>b.onclick=()=>{state.themeMode=b.dataset.theme;applyTheme();});
+document.querySelectorAll('#segLang button').forEach(b=>b.onclick=()=>{
+  state.lang=b.dataset.lang; applyLang(); renderScreen(); renderTabbar(); });
+function applyLang(){
+  document.documentElement.lang = state.lang==='zh'?'zh-CN':'en';
+  document.querySelectorAll('#segLang button').forEach(b=>b.classList.toggle('on',b.dataset.lang===state.lang));
+  const L=t().ctl;
+  document.querySelector('[data-i18n="ctlTheme"]').textContent=L.theme;
+  document.querySelector('[data-i18n="ctlLight"]').textContent=L.light;
+  document.querySelector('[data-i18n="ctlDark"]').textContent=L.dark;
+  document.querySelector('[data-i18n="ctlSystem"]').textContent=L.system;
+  document.querySelector('.demo-note').innerHTML=L.demoNote;
+  document.getElementById('sideIntro').textContent=t().side.p1;
+  document.title = state.lang==='zh'?'慢食刻 BiteTempo · 统计与首页布局 增量原型 v2':'BiteTempo · Stats & Home Layout Prototype v2';
+  renderTabbar(); renderScreen();
+}
+
+/* ============ 启动 ============ */
+applyTheme(); applyLang(); renderTabbar(); renderScreen();
+</script>
+</body>
+</html>

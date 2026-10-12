@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
@@ -16,12 +16,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import { getProvider, polishErrorMessageKey } from '@/ai';
-import type { MealNote } from '@/domain/types';
+import type { MealNote, MealSession } from '@/domain/types';
 import {
   clearDraft,
   deleteNote,
   insertNote,
   listNotes,
+  listSessions,
   loadDraft,
   saveDraft,
   uid,
@@ -33,15 +34,23 @@ import { getCapability, startListening, type VoiceSession } from '@/voice/VoiceI
 
 type Phase = 'idle' | 'listening' | 'polishing';
 
+function formatMMSS(totalSeconds: number): string {
+  const s = Math.max(0, Math.floor(totalSeconds));
+  return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+}
+
 export default function JournalScreen() {
   const { colors } = useSettings();
   const { t, i18n } = useTranslation();
+  const params = useLocalSearchParams<{ sessionId?: string }>();
 
   const [rawText, setRawText] = useState('');
   const [polished, setPolished] = useState('');
   const [phase, setPhase] = useState<Phase>('idle');
   const [notes, setNotes] = useState<MealNote[]>([]);
+  const [sessions, setSessions] = useState<MealSession[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const session = useRef<VoiceSession | null>(null);
@@ -50,6 +59,7 @@ export default function JournalScreen() {
 
   const refresh = useCallback(async () => {
     setNotes(await listNotes());
+    setSessions(await listSessions());
   }, []);
 
   useEffect(() => {
@@ -63,6 +73,15 @@ export default function JournalScreen() {
       await refresh();
     })();
   }, [refresh]);
+
+  // 从计时页「记录一点心得」跳转过来：把本次用餐与笔记关联
+  useEffect(() => {
+    if (params.sessionId) setPendingSessionId(params.sessionId);
+  }, [params.sessionId]);
+
+  const pendingSession = pendingSessionId
+    ? sessions.find((s) => s.id === pendingSessionId) ?? null
+    : null;
 
   // 草稿自动保存（防丢）
   const persistDraft = useCallback(
@@ -147,7 +166,7 @@ export default function JournalScreen() {
         } else {
           await insertNote({
             id: editingId,
-            sessionId: null,
+            sessionId: pendingSessionId,
             rawText,
             finalText: finalText || rawText,
             revision: 1,
@@ -159,7 +178,7 @@ export default function JournalScreen() {
       } else {
         await insertNote({
           id: uid(),
-          sessionId: null,
+          sessionId: pendingSessionId,
           rawText,
           finalText: finalText || rawText,
           revision: 1,
@@ -172,6 +191,7 @@ export default function JournalScreen() {
       setRawText('');
       setPolished('');
       setEditingId(null);
+      setPendingSessionId(null);
       await refresh();
     } catch {
       setError(t('journal.saveFailed'));
@@ -231,6 +251,14 @@ export default function JournalScreen() {
             <Text style={[styles.listening, { color: colors.accent }]}>● {t('journal.listening')}</Text>
           ) : null}
 
+          {pendingSession ? (
+            <View style={[styles.linkBadge, { backgroundColor: colors.panel2 }]}>
+              <Text style={{ color: colors.accent, fontSize: 12, fontWeight: '700' }}>
+                {t('journal.pendingLink', { t: formatMMSS(pendingSession.actualSeconds ?? 0) })}
+              </Text>
+            </View>
+          ) : null}
+
           {error ? <Text style={[styles.error, { color: colors.danger }]}>{error}</Text> : null}
 
           <Text style={[styles.label, { color: colors.muted }]}>{t('journal.rawLabel')}</Text>
@@ -279,22 +307,30 @@ export default function JournalScreen() {
           {notes.length === 0 ? (
             <Text style={{ color: colors.muted }}>{t('journal.empty')}</Text>
           ) : (
-            notes.map((n) => (
-              <View key={n.id} style={[styles.card, { backgroundColor: colors.panel, borderColor: colors.stroke }]}>
-                <Text style={[styles.cardDate, { color: colors.accent }]}>
-                  {new Date(n.updatedAt).toLocaleString(i18n.language)}
-                </Text>
-                <Text style={[styles.cardText, { color: colors.fg }]}>{n.finalText || n.rawText}</Text>
-                <View style={styles.cardActions}>
-                  <Pressable onPress={() => onEdit(n)} hitSlop={8}>
-                    <Text style={{ color: colors.muted }}>{t('common.edit')}</Text>
-                  </Pressable>
-                  <Pressable onPress={() => onDelete(n)} hitSlop={8}>
-                    <Text style={{ color: colors.danger }}>{t('common.delete')}</Text>
-                  </Pressable>
+            notes.map((n) => {
+              const linked = n.sessionId ? sessions.find((s) => s.id === n.sessionId) : null;
+              return (
+                <View key={n.id} style={[styles.card, { backgroundColor: colors.panel, borderColor: colors.stroke }]}>
+                  <Text style={[styles.cardDate, { color: colors.accent }]}>
+                    {new Date(n.updatedAt).toLocaleString(i18n.language)}
+                  </Text>
+                  <Text style={[styles.cardText, { color: colors.fg }]}>{n.finalText || n.rawText}</Text>
+                  {linked ? (
+                    <Text style={[styles.linkedText, { color: colors.accent }]}>
+                      {t('journal.linkedMeal', { t: formatMMSS(linked.actualSeconds ?? 0) })}
+                    </Text>
+                  ) : null}
+                  <View style={styles.cardActions}>
+                    <Pressable onPress={() => onEdit(n)} hitSlop={8}>
+                      <Text style={{ color: colors.muted }}>{t('common.edit')}</Text>
+                    </Pressable>
+                    <Pressable onPress={() => onDelete(n)} hitSlop={8}>
+                      <Text style={{ color: colors.danger }}>{t('common.delete')}</Text>
+                    </Pressable>
+                  </View>
                 </View>
-              </View>
-            ))
+              );
+            })
           )}
         </ScrollView>
       </KeyboardAvoidingView>
@@ -310,6 +346,7 @@ const styles = StyleSheet.create({
   voice: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 56, borderRadius: Radius.control },
   voiceText: { fontSize: 16, fontWeight: '700' },
   listening: { fontSize: 13, fontWeight: '600', marginTop: -4 },
+  linkBadge: { alignSelf: 'flex-start', borderRadius: 99, paddingHorizontal: 10, paddingVertical: 5 },
   error: { fontSize: 13 },
   label: { fontSize: 12, marginTop: 4 },
   input: { minHeight: 130, borderRadius: Radius.control, borderWidth: 1, padding: 14, fontSize: 14, lineHeight: 22, textAlignVertical: 'top' },
@@ -321,5 +358,6 @@ const styles = StyleSheet.create({
   card: { borderRadius: Radius.card, borderWidth: 1, padding: 15 },
   cardDate: { fontSize: 11, fontWeight: '600' },
   cardText: { fontSize: 14, lineHeight: 21, marginTop: 4 },
+  linkedText: { fontSize: 11, fontWeight: '700', marginTop: 6 },
   cardActions: { flexDirection: 'row', gap: 16, marginTop: 10 },
 });

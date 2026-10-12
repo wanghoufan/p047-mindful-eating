@@ -25,6 +25,16 @@ export type MealNote = {
   updatedAt: number;
 };
 
+// 用餐统计（由 session 列表实时聚合，不落库）
+export type MealStats = {
+  total: number; // 全部记录数（含未完成）
+  reached: number; // 达标次数
+  totalSeconds: number; // 累计正念秒数（仅已结束记录）
+  avgSeconds: number | null; // 平均每次秒数
+};
+
+export type DayMinutes = { dayStart: number; minutes: number; isToday: boolean };
+
 export type LocalSettings = {
   durationPreset: DurationPreset;
   themeMode: ThemeMode;

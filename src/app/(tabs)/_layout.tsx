@@ -14,6 +14,7 @@ function TabBar({ state, navigation }: any) {
   const items = [
     { key: 'index', label: t('tabs.meal'), icon: 'restaurant' as const },
     { key: 'journal', label: t('tabs.journal'), icon: 'document-text' as const },
+    { key: 'stats', label: t('tabs.stats'), icon: 'stats-chart' as const },
   ];
 
   return (
@@ -53,6 +54,7 @@ export default function TabsLayout() {
     <Tabs tabBar={(props) => <TabBar {...props} />} screenOptions={{ headerShown: false }}>
       <Tabs.Screen name="index" />
       <Tabs.Screen name="journal" />
+      <Tabs.Screen name="stats" />
     </Tabs>
   );
 }

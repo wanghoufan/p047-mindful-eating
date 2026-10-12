@@ -2,7 +2,7 @@ import type { Translation } from './zh-CN';
 
 const en: Translation = {
   app: { name: 'BiteTempo', tagline: 'Take it slow at the table' },
-  tabs: { meal: 'Meal', journal: 'Notes' },
+  tabs: { meal: 'Meal', journal: 'Notes', stats: 'Stats' },
   common: { ok: 'OK', cancel: 'Cancel', retry: 'Retry', save: 'Save', delete: 'Delete', edit: 'Edit', back: 'Back', clear: 'Clear' },
   settings: {
     title: 'Settings',
@@ -66,6 +66,8 @@ const en: Translation = {
     deleteTitle: 'Delete this note?',
     deleteBody: 'This cannot be undone.',
     saveFailed: 'Could not save, please retry',
+    pendingLink: 'Will link to this meal ({{t}})',
+    linkedMeal: 'Linked meal {{t}}',
     voiceUnavailable: 'This device does not support this voice input',
     voicePermission: 'No microphone permission — please allow it in system settings',
     voiceNoResult: 'Nothing was heard, please try again',
@@ -76,6 +78,23 @@ const en: Translation = {
     errNetwork: 'No network — check your connection and retry',
     errTimeout: 'Request timed out, please retry',
     errGeneric: 'Tidy failed; your original text is kept — you can retry',
+  },
+  stats: {
+    title: 'Stats',
+    c1: 'Total meals',
+    c2: 'Target rate',
+    c3: 'Mindful time',
+    c4: 'Avg per meal',
+    chartTitle: 'Last 7 days',
+    chartUnit: 'mindful min / day',
+    listTitle: 'Meal records',
+    tagHit: 'On target',
+    tagEarly: 'Ended early',
+    tagAbandon: 'Incomplete',
+    tagActive: 'In progress',
+    target: 'target {{min}} min',
+    autoNote: 'Auto-recorded after leaving mid-meal',
+    empty: 'No meals yet — enjoy your first slow one.',
   },
   tips: [
     'Slow down. Notice how the food tastes.',
