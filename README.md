@@ -55,7 +55,7 @@ npx expo start          # 开发调试（扫码或模拟器）
 npx expo run:android    # 生成/安装 Development Build 到真机或模拟器
 ```
 
-已发布安装包：打开 [Releases · v1.0.0](https://github.com/wanghoufan/p047-mindful-eating/releases/tag/v1.0.0)，下载 `BiteTempo-1.0.0-universal.apk`（Android 7.0+ 通用包，页面内有 SHA-256 与安装说明）。这份安装包对应首发 v1.0.0；**用餐历史与统计**是之后新增的功能，可按下文命令自行构建最新版。
+已发布安装包：打开 [Releases · v1.1.0](https://github.com/wanghoufan/p047-mindful-eating/releases/tag/v1.1.0)，下载 `BiteTempo-v1.1.0.apk`（Android 7.0+ 通用包，页面内有 SHA-256 与安装说明）。这份安装包对应 **v1.1.0**，已包含**用餐历史与统计**（三个底部标签）；国内下载可走蒲公英：<https://www.pgyer.com/manshike>。
 
 本地构建产物在：
 
@@ -83,4 +83,4 @@ Expo SDK 57 / React Native 0.86 / TypeScript，`expo-router` 管三个 Tab 与�
 
 ## 状态
 
-v1.0.0，安卓首发，**开发收尾阶段**：安装包已在 GitHub Release（`v1.0.0`）提供，最新的用餐历史与统计功能可从源码构建体验；未上架应用市场、无网页版。个人学习项目。
+v1.1.0，**开发收尾阶段**：安装包已在 GitHub Release（`v1.1.0`）与蒲公英（<https://www.pgyer.com/manshike>）提供，含用餐历史与统计；未上架应用市场、无网页版。个人学习项目。

@@ -55,7 +55,7 @@ npx expo start          # dev server (QR code or emulator)
 npx expo run:android    # build/install a Development Build on a device or emulator
 ```
 
-Download the published build: open [Releases · v1.0.0](https://github.com/wanghoufan/p047-mindful-eating/releases/tag/v1.0.0) and grab `BiteTempo-1.0.0-universal.apk` (universal, Android 7.0+; the page carries the SHA-256 and install notes). That build is the first release, v1.0.0; **meal history and stats** were added afterwards, and the latest build can be produced with the commands below.
+Download the published build: open [Releases · v1.1.0](https://github.com/wanghoufan/p047-mindful-eating/releases/tag/v1.1.0) and grab `BiteTempo-v1.1.0.apk` (universal, Android 7.0+; the page carries the SHA-256 and install notes). That build is **v1.1.0**, which already includes **meal history and stats** (three bottom tabs). For users in mainland China, Pgyer also hosts the same build: <https://www.pgyer.com/manshike>.
 
 The locally built artifact is at:
 
@@ -83,4 +83,4 @@ Expo SDK 57 / React Native 0.86 / TypeScript, with `expo-router` for the three t
 
 ## Status
 
-v1.0.0, Android first, **finishing development**: the installable build is published on GitHub Releases (`v1.0.0`); the newest meal history and stats are available from source. Not listed in any app store, no web version. A personal learning project.
+v1.1.0, **finishing development**: the installable build is published on GitHub Releases (`v1.1.0`) and Pgyer (<https://www.pgyer.com/manshike>), including meal history and stats. Not listed in any app store, no web version. A personal learning project.
