@@ -63,3 +63,11 @@
 - Verification：—
 - Failure Reason：—
 - Difference From Previous Attempt：—
+
+## v1.1.0 Release 包真机抽验（2026-10-22）
+
+- 构建：`./gradlew :app:assembleRelease`（JDK17 + SDK36），`BUILD SUCCESSFUL`；`versionName=1.1.0`／`versionCode=2`；SHA-256 `1e2a1f85…645f16ec`。
+- 安装：副机 Redmi Note 12 Pro（`indq5xfi6hovay4d`）`adb install -r` 成功，可覆盖 v1.0.0（同 debug keystore 签名）。
+- 抽验项：冷启动用餐页、三 Tab 导航、统计页四卡+7 天图+空状态、开始用餐后倒计时走秒与提示轮播——**全部通过**，`logcat -b crash` 无记录。证据：`docs/qa/evidence/release-v1.1.0/`。
+- 未验项：点「结束」后副机被并发 App（`com.postureguard.app`）抢占前台，本轮未复验「结束→记录→统计计数」；该链路同源码已于 week10-stats 全项真机通过，本次仅改版本号。
+- 结论：**PASS（自审）**；无 P0/P1。首次发布签收仍待用户。
